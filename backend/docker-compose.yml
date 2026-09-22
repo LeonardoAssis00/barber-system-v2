@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: barber-system-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: barber
+      POSTGRES_PASSWORD: barber_dev
+      POSTGRES_DB: barber_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
