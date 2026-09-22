@@ -511,3 +511,111 @@ Usuário autenticado identificado
 * [ ] Avaliar a separação entre autenticação e autorização.
 * [ ] Definir como as diferentes funções do sistema serão protegidas.
 * [ ] Posteriormente aplicar a autenticação às funcionalidades reais do Barber System.
+
+
+Finalização da autenticação
+
+## 8. Teste da rota protegida `/auth/me`
+
+Após a implementação da rota `/auth/me`, foi realizado um teste utilizando um token JWT gerado através da rota de login.
+
+Inicialmente, ocorreu um erro de validação da assinatura do token. Para verificar a origem do problema, o servidor backend foi encerrado e iniciado novamente de forma limpa.
+
+Após a reinicialização, foi realizado um novo login utilizando as credenciais do usuário de teste:
+
+* E-mail: `leonardo.teste2@teste.com`
+* Senha: `12345678`
+
+O login foi realizado com sucesso e o backend retornou um novo token JWT.
+
+Em seguida, esse token foi utilizado na requisição para:
+
+```text
+GET /auth/me
+```
+
+utilizando o cabeçalho:
+
+```text
+Authorization: Bearer <token>
+```
+
+O resultado foi uma resposta HTTP 200 contendo os dados completos do usuário autenticado.
+
+### 8.1 Resultado obtido
+
+A API retornou:
+
+* ID do usuário;
+* e-mail;
+* dados do perfil;
+* nome completo;
+* função do usuário (`barber`);
+* ID da barbearia;
+* nome da barbearia;
+* slug da barbearia;
+* proprietário da barbearia;
+* data de início do período de teste;
+* data de término do período de teste;
+* situação de pagamento;
+* situação de atividade da conta.
+
+Isso confirmou que o backend consegue utilizar o `sub` presente no JWT para identificar o usuário autenticado e, posteriormente, consultar seus dados no banco de dados através do Prisma.
+
+### 8.2 Fluxo validado
+
+O fluxo completo de autenticação passou a funcionar da seguinte forma:
+
+```text
+Login
+   ↓
+E-mail e senha
+   ↓
+Busca do usuário no PostgreSQL
+   ↓
+Validação da senha com Argon2
+   ↓
+Geração do JWT
+   ↓
+Envio do token ao cliente
+   ↓
+Requisição para /auth/me
+   ↓
+Validação do JWT pelo middleware
+   ↓
+Identificação do usuário através do JWT
+   ↓
+Consulta do usuário no PostgreSQL
+   ↓
+Carregamento do Profile
+   ↓
+Carregamento da BarberShop
+   ↓
+Retorno dos dados do usuário autenticado
+```
+
+### 8.3 Conclusão da etapa
+
+Com os testes realizados, a primeira etapa da autenticação do barbeiro foi concluída.
+
+Até este ponto, o backend possui as seguintes funcionalidades implementadas e testadas:
+
+* cadastro de barbeiro;
+* criação da conta de usuário;
+* criação do perfil do barbeiro;
+* criação da barbearia;
+* geração automática do período de teste de 15 dias;
+* validação de e-mail duplicado;
+* validação de slug duplicado;
+* armazenamento seguro da senha utilizando Argon2;
+* login do barbeiro;
+* geração de token JWT;
+* middleware para proteção de rotas;
+* rota protegida `/auth/me`;
+* recuperação dos dados do usuário autenticado;
+* recuperação dos dados do perfil;
+* recuperação dos dados da barbearia relacionada.
+
+A autenticação básica do barbeiro está, portanto, funcionando integrada ao PostgreSQL, Prisma e JWT.
+
+A próxima etapa poderá utilizar essa autenticação como base para proteger as funcionalidades administrativas do sistema.

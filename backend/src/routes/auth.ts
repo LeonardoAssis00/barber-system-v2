@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { registerBarber } from "../services/barber.service.js";
 import { loginBarber } from "../services/auth.service.js";
 import { authenticate } from "../middleware/auth.middleware.js";
+import { prisma } from "../lib/prisma.js"
 
 export async function authRoutes(app: FastifyInstance) {
     app.post("/auth/register/barber", async (request, reply) => {
@@ -42,8 +43,8 @@ export async function authRoutes(app: FastifyInstance) {
         }
     });
 
-    app.post("/auth/login", async (requestAnimationFrame, reply) => {
-        const body = requestAnimationFrame.body as {
+    app.post("/auth/login", async (request, reply) => {
+        const body = request.body as {
             email: string;
             password: string;
         };
@@ -67,10 +68,34 @@ export async function authRoutes(app: FastifyInstance) {
 
     app.get("/auth/me", {
         preHandler: authenticate,
-    }, async (requestAnimationFrame, reply) => {
+    }, async (request, reply) => {
+        const userId = request.user.sub;
+
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+            include: {
+                profile: {
+                    include: {
+                        barberShop: true,
+                    },
+                },
+            },
+        });
+
+        if(!user) {
+            return reply.status(404).send({
+                message: "Usuário não encontrado."
+            });
+        }
+
         return reply.status(200).send({
-            message: "Autenticação funcionando.",
-            user: requestAnimationFrame.user,
+            user: {
+                id: user.id,
+                email: user.email,
+                profile: user.profile,
+            },
         });
     });
 }
