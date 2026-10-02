@@ -210,6 +210,93 @@ POST /services
 
 ---
 
+## 9. Implementação do GET /services
+
+Após a implementação do cadastro de serviços, foi desenvolvida a funcionalidade de consulta dos serviços pertencentes à barbearia do usuário autenticado.
+
+Foi criada a função:
+
+```text
+backend/src/services/service.service.ts
+
+10. Criação da rota GET /services
+
+Foi criada a rota:
+
+GET /services
+
+Assim como o cadastro de serviços, a consulta utiliza o middleware de autenticação JWT.
+
+O ID do usuário autenticado é obtido através de:
+
+request.user.sub
+
+e enviado para a função GetServices.
+
+A função realiza a consulta no PostgreSQL através do Prisma, retornando somente os serviços vinculados à barbearia do usuário autenticado.
+
+11. Teste do GET /services
+
+Após iniciar o PostgreSQL através do Docker e o servidor Fastify, foi realizado um novo login para obtenção de um token JWT.
+
+Em seguida, foi realizada uma requisição autenticada para:
+
+GET /services
+
+A requisição foi concluída com sucesso e retornou o serviço anteriormente cadastrado:
+
+Nome: Corte de cabelo
+Preço: 30
+
+O resultado também apresentou o ID do serviço, o ID da barbearia e a data de criação.
+
+Esse teste confirmou que a consulta está sendo realizada corretamente no PostgreSQL através do Prisma.
+
+12. Teste de proteção da rota
+
+Também foi realizado um teste acessando:
+
+GET /services
+
+sem enviar o cabeçalho de autorização.
+
+O backend retornou:
+
+HTTP 401 Unauthorized
+
+com a mensagem:
+
+No Authorization was found in request.headers
+
+Esse teste confirmou que a rota está protegida pelo middleware JWT e não permite acesso sem autenticação.
+
+13. Resultado atual do módulo
+
+Após esta etapa, o módulo de serviços possui as seguintes operações implementadas:
+
+POST /services
+GET /services
+
+O backend consegue:
+
+cadastrar serviços;
+identificar automaticamente a barbearia do usuário autenticado;
+listar os serviços da barbearia;
+impedir acesso às operações sem autenticação;
+persistir e consultar os dados no PostgreSQL através do Prisma.
+14. Próximo passo
+
+As próximas funcionalidades planejadas para o módulo de serviços serão:
+
+PUT /services/:id
+DELETE /services/:id
+
+Essas operações permitirão atualizar e excluir serviços pertencentes à barbearia do usuário autenticado.
+
+O módulo continuará sendo desenvolvido e testado de forma incremental antes da integração com o frontend.
+
+---
+
 ## 9. Próximo passo
 
 A próxima funcionalidade planejada para o módulo será:
