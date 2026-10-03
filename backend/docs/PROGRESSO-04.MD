@@ -284,29 +284,192 @@ identificar automaticamente a barbearia do usuário autenticado;
 listar os serviços da barbearia;
 impedir acesso às operações sem autenticação;
 persistir e consultar os dados no PostgreSQL através do Prisma.
-14. Próximo passo
+## 14. Implementação do PUT /services/:id
 
-As próximas funcionalidades planejadas para o módulo de serviços serão:
+Com as operações de cadastro e consulta concluídas, foi implementada a funcionalidade de atualização de serviços.
 
-PUT /services/:id
-DELETE /services/:id
+Foi criada no arquivo:
 
-Essas operações permitirão atualizar e excluir serviços pertencentes à barbearia do usuário autenticado.
+```text
+backend/src/services/service.service.ts
+```
 
-O módulo continuará sendo desenvolvido e testado de forma incremental antes da integração com o frontend.
+a função:
+
+```text
+UpdateService
+```
+
+Essa função recebe:
+
+* ID do serviço;
+* novo nome;
+* novo preço;
+* ID do usuário autenticado.
+
+Antes de realizar a atualização, são feitas verificações para garantir que o usuário possui um perfil válido, possui uma barbearia vinculada e que o serviço pertence à sua própria barbearia.
+
+Somente após essas verificações o serviço é atualizado no PostgreSQL através do Prisma.
 
 ---
 
-## 9. Próximo passo
+## 15. Criação da rota PUT /services/:id
 
-A próxima funcionalidade planejada para o módulo será:
+Foi criada a rota:
+
+```text
+PUT /services/:id
+```
+
+A rota utiliza o middleware de autenticação JWT.
+
+O ID do usuário autenticado é obtido através de:
+
+```text
+request.user.sub
+```
+
+O ID do serviço é obtido através dos parâmetros da URL:
+
+```text
+request.params.id
+```
+
+Os novos dados do serviço são recebidos através do corpo da requisição.
+
+A rota envia essas informações para a função `UpdateService`, responsável pelas regras de atualização e autorização.
+
+---
+
+## 16. Teste de atualização do serviço
+
+Após a implementação da rota, foi realizada a compilação do projeto através do comando:
+
+```text
+npx tsc --noEmit
+```
+
+O projeto foi compilado sem erros.
+
+Em seguida, foi realizado um teste autenticado utilizando um serviço pertencente à barbearia do usuário.
+
+O serviço inicialmente possuía os dados:
+
+```text
+Nome: Corte de cabelo
+Preço: 30
+```
+
+Foi realizada uma requisição PUT para alterar os dados para:
+
+```text
+Nome: Corte de cabelo masculino
+Preço: 35
+```
+
+A requisição foi concluída com sucesso e o backend retornou a confirmação da atualização.
+
+---
+
+## 17. Verificação da persistência da atualização
+
+Após a atualização, foi realizada novamente uma requisição:
 
 ```text
 GET /services
 ```
 
-Essa rota deverá retornar os serviços pertencentes à barbearia do usuário autenticado.
+O serviço retornado apresentou os novos dados:
 
-Posteriormente serão implementadas as operações de atualização e exclusão dos serviços.
+```text
+Nome: Corte de cabelo masculino
+Preço: 35
+```
 
-O módulo seguirá sendo desenvolvido e testado de forma incremental antes da integração com o frontend.
+Esse teste confirmou que a alteração foi persistida corretamente no PostgreSQL através do Prisma.
+
+---
+
+## 18. Teste de proteção da rota PUT
+
+Também foi realizado um teste acessando:
+
+```text
+PUT /services/:id
+```
+
+sem fornecer um token JWT.
+
+O backend retornou:
+
+```text
+HTTP 401 Unauthorized
+```
+
+com a mensagem:
+
+```text
+No Authorization was found in request.headers
+```
+
+Esse teste confirmou que a operação de atualização está protegida pelo middleware de autenticação e não pode ser executada por usuários não autenticados.
+
+---
+
+## 19. Teste de autorização entre barbearias
+
+Foi realizado um teste adicional para verificar se um usuário autenticado poderia alterar um serviço pertencente a outra barbearia.
+
+Para isso, foram utilizados dois barbeiros diferentes, cada um vinculado à sua própria barbearia.
+
+O primeiro usuário tentou alterar um serviço pertencente à segunda barbearia.
+
+Apesar de possuir um token JWT válido, a operação foi recusada pelo backend, que retornou:
+
+```text
+Serviço não pertence à sua barbearia.
+```
+
+Esse teste confirmou que o sistema não verifica somente a autenticação do usuário, mas também verifica a propriedade do serviço antes de permitir sua alteração.
+
+Dessa forma, um barbeiro autenticado não pode modificar serviços pertencentes a outra barbearia.
+
+---
+
+## 20. Resultado atual do módulo
+
+Após a implementação do PUT, o módulo de serviços possui as seguintes operações:
+
+```text
+POST /services
+GET /services
+PUT /services/:id
+```
+
+O backend consegue:
+
+* cadastrar serviços;
+* consultar os serviços da barbearia do usuário autenticado;
+* atualizar serviços;
+* identificar automaticamente a barbearia do usuário;
+* impedir operações sem autenticação;
+* impedir que um usuário altere serviços de outra barbearia;
+* persistir os dados no PostgreSQL através do Prisma.
+
+Os testes realizados confirmaram o funcionamento das operações e das principais regras de segurança do módulo.
+
+---
+
+## 21. Próximo passo
+
+A próxima funcionalidade planejada para o módulo de serviços será:
+
+```text
+DELETE /services/:id
+```
+
+Essa operação deverá permitir a exclusão de um serviço pertencente à barbearia do usuário autenticado.
+
+Assim como nas operações anteriores, a funcionalidade será implementada de forma incremental, realizando primeiro a regra de negócio, depois a rota, os testes de autenticação e autorização e, por fim, a verificação da exclusão no banco de dados.
+
+Após a conclusão das operações de serviços, será realizada a documentação da etapa e o versionamento das alterações no Git antes do início do próximo módulo do backend.
