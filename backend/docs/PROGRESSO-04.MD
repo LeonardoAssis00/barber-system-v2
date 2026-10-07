@@ -460,16 +460,235 @@ Os testes realizados confirmaram o funcionamento das operações e das principai
 
 ---
 
-## 21. Próximo passo
+## 21. Implementação da exclusão de serviços
 
-A próxima funcionalidade planejada para o módulo de serviços será:
+Após a conclusão das operações de cadastro, consulta e atualização, foi implementada a funcionalidade de exclusão de serviços.
 
-```text
+Para isso, foi criada a função `DeleteService` no arquivo:
+
+src/services/service.service.ts
+
+A função recebe o ID do serviço que será excluído e o ID do usuário autenticado.
+
+Antes de realizar a exclusão, o backend executa algumas validações.
+
+Primeiramente, é localizado o perfil do usuário através do seu ID. Em seguida, é verificado se o usuário possui uma barbearia vinculada.
+
+Depois disso, o serviço informado é localizado no banco de dados.
+
+Por fim, o sistema compara a barbearia do serviço com a barbearia vinculada ao usuário autenticado.
+
+Somente quando o serviço pertence à mesma barbearia do usuário a exclusão é realizada.
+
+Essa validação garante que um barbeiro não consiga excluir serviços pertencentes a outra barbearia.
+
+
+## 22. Criação da rota DELETE /services/:id
+
+Após a implementação da regra de negócio, foi criada a rota:
+
 DELETE /services/:id
-```
 
-Essa operação deverá permitir a exclusão de um serviço pertencente à barbearia do usuário autenticado.
+Assim como as demais operações do módulo, a rota utiliza o middleware de autenticação JWT.
 
-Assim como nas operações anteriores, a funcionalidade será implementada de forma incremental, realizando primeiro a regra de negócio, depois a rota, os testes de autenticação e autorização e, por fim, a verificação da exclusão no banco de dados.
+O ID do usuário autenticado é obtido através de:
 
-Após a conclusão das operações de serviços, será realizada a documentação da etapa e o versionamento das alterações no Git antes do início do próximo módulo do backend.
+request.user.sub
+
+O ID do serviço que será excluído é obtido através dos parâmetros da URL:
+
+request.params.id
+
+Essas informações são enviadas para a função `DeleteService`.
+
+A função realiza as validações necessárias e, caso o usuário tenha autorização para excluir o serviço, a operação é executada através do Prisma.
+
+Quando a exclusão é realizada com sucesso, o backend retorna uma mensagem de confirmação juntamente com os dados do serviço excluído.
+
+
+## 23. Teste de exclusão pelo proprietário
+
+Após a implementação da rota DELETE, foi realizado um teste utilizando um serviço pertencente à própria barbearia do usuário autenticado.
+
+O serviço utilizado no teste possuía os seguintes dados:
+
+Nome: Barba
+
+Preço: 25
+
+ID:
+
+3e644e64-5d0f-4c73-985b-9b5593acdc2b
+
+Foi realizada uma requisição:
+
+DELETE /services/:id
+
+utilizando um token JWT válido do proprietário do serviço.
+
+A operação foi concluída com sucesso.
+
+O backend retornou a mensagem:
+
+Serviço excluído com sucesso.
+
+Esse teste confirmou que o proprietário de uma barbearia consegue excluir corretamente seus próprios serviços.
+
+
+## 24. Verificação da exclusão através do GET /services
+
+Após a exclusão do serviço, foi realizada uma nova consulta através da rota:
+
+GET /services
+
+utilizando o mesmo usuário autenticado.
+
+O backend retornou:
+
+{
+    "services": []
+}
+
+O resultado confirmou que o serviço excluído não estava mais disponível na consulta.
+
+Esse teste também confirmou que a exclusão foi efetivamente persistida no banco de dados PostgreSQL, e não apenas removida da resposta da requisição DELETE.
+
+
+## 25. Teste de proteção da rota DELETE
+
+Também foi realizado um teste tentando acessar a rota:
+
+DELETE /services/:id
+
+sem fornecer um token JWT.
+
+O backend retornou:
+
+HTTP 401 Unauthorized
+
+com a mensagem:
+
+No Authorization was found in request.headers
+
+Esse resultado confirmou que a rota DELETE está protegida pelo middleware de autenticação.
+
+Dessa forma, usuários que não estejam autenticados não conseguem executar a exclusão de serviços.
+
+
+## 26. Teste de autorização entre barbearias
+
+Após validar a exclusão pelo proprietário, foi realizado um teste para verificar se um usuário autenticado poderia excluir um serviço pertencente a outra barbearia.
+
+Para realizar esse teste, foi criado um serviço pertencente à segunda barbearia.
+
+Os dados do serviço utilizado foram:
+
+Nome: Servico Teste DELETE
+
+Preço: 40
+
+ID:
+
+241ca727-c6ff-4628-8cfe-4c11299b69cb
+
+O primeiro barbeiro tentou excluir esse serviço utilizando seu próprio token JWT.
+
+Apesar de possuir um token válido e estar autenticado no sistema, a operação foi recusada pelo backend.
+
+A resposta retornada foi:
+
+Serviço não pertence à sua barbearia.
+
+Esse teste confirmou que o sistema não verifica apenas se o usuário está autenticado.
+
+O backend também verifica se o serviço pertence à mesma barbearia do usuário antes de permitir a exclusão.
+
+Dessa forma, um barbeiro autenticado não pode excluir serviços pertencentes a outra barbearia.
+
+
+## 27. Verificação da integridade após tentativa não autorizada
+
+Após a tentativa de exclusão realizada pelo usuário de outra barbearia, foi realizada uma nova consulta através da rota:
+
+GET /services
+
+utilizando o token do proprietário do serviço.
+
+O backend retornou novamente o serviço:
+
+ID:
+
+241ca727-c6ff-4628-8cfe-4c11299b69cb
+
+Nome:
+
+Servico Teste DELETE
+
+Preço:
+
+40
+
+Esse resultado confirmou que a tentativa de exclusão não autorizada não modificou o banco de dados.
+
+Portanto, além de impedir a operação, o backend preservou corretamente os dados pertencentes à outra barbearia.
+
+Esse teste foi importante para confirmar a integridade e o isolamento dos dados entre diferentes usuários e barbearias.
+
+
+## 28. Resultado final do módulo de serviços
+
+Com a implementação da operação DELETE, o módulo de serviços passou a possuir as quatro operações básicas do CRUD:
+
+POST /services
+
+GET /services
+
+PUT /services/:id
+
+DELETE /services/:id
+
+O módulo agora permite:
+
+- cadastrar serviços;
+- consultar serviços;
+- atualizar serviços;
+- excluir serviços;
+- identificar automaticamente a barbearia do usuário autenticado;
+- proteger as operações através de autenticação JWT;
+- impedir alterações em serviços pertencentes a outras barbearias;
+- impedir exclusões de serviços pertencentes a outras barbearias;
+- persistir as alterações no PostgreSQL através do Prisma;
+- manter os dados protegidos contra operações não autorizadas.
+
+Durante os testes foram verificadas as operações de cadastro, consulta, atualização e exclusão, além das regras de autenticação e autorização.
+
+Também foi confirmado que usuários de diferentes barbearias ficam isolados entre si, não podendo modificar ou excluir serviços pertencentes a outra barbearia.
+
+Com isso, o CRUD básico do módulo de serviços foi concluído.
+
+
+## 29. Conclusão da etapa
+
+A implementação do módulo de serviços foi concluída após a criação das operações de cadastro, consulta, atualização e exclusão.
+
+Além das operações básicas, foram implementadas regras para identificar automaticamente a barbearia do usuário autenticado e impedir o acesso ou alteração de dados pertencentes a outras barbearias.
+
+Todos os testes realizados durante esta etapa apresentaram os resultados esperados.
+
+O módulo encontra-se funcional e integrado ao sistema de autenticação JWT, ao Prisma e ao banco de dados PostgreSQL.
+
+
+## 30. Versionamento das alterações
+
+Após a conclusão dos testes do módulo de serviços, as alterações realizadas serão documentadas e posteriormente versionadas no Git.
+
+O versionamento terá como objetivo registrar a conclusão da implementação do CRUD de serviços no histórico do projeto Barber System V2.
+
+Após o commit e o envio para o repositório remoto, o código ficará registrado juntamente com a documentação correspondente desta etapa.
+
+
+## 31. Próximo passo
+
+Com a conclusão do módulo de serviços, o próximo passo será definir e iniciar o próximo módulo do backend de acordo com as funcionalidades previstas para o Barber System V2.
+
+Antes do início do novo módulo, será realizado o versionamento das alterações atuais no Git, garantindo que o projeto permaneça organizado e que seja possível retornar a este ponto do desenvolvimento caso necessário.

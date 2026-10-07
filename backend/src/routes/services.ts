@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { authenticate } from "../middleware/auth.middleware.js";
-import { CreateService, GetServices, UpdateService } from "../services/service.service.js";
+import { CreateService, GetServices, UpdateService, DeleteService } from "../services/service.service.js";
 
 export async function serviceRoutes(app: FastifyInstance) {
     app.post("/services", {
@@ -99,4 +99,37 @@ export async function serviceRoutes(app: FastifyInstance) {
             });
         }
     });
+
+    app.delete("/services/:id", {
+        preHandler: authenticate,
+    }, async (request, reply) => {
+        const params = request.params as {
+            id: string;
+        };
+
+        const userId = request.user.sub;
+
+        try {
+            const service = await DeleteService({
+                id: params.id,
+                userId,
+            });
+
+            return reply.status(200).send({
+                message: "Serviço excluído com sucesso.",
+                service,
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                return reply.status(400).send({
+                    message: error.message,
+                });
+            }
+
+            return reply.status(500).send({
+                message: "Erro interno do servidor.",
+            });
+        }
+    });
+
 }

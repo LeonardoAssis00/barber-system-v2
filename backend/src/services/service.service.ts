@@ -110,3 +110,48 @@ export async function UpdateService(data: UpdateServiceData) {
     });
     return UpdateService
 }
+
+interface DeleteServiceData {
+    id: string;
+    userId: string;
+}
+
+export async function DeleteService(data: DeleteServiceData) {
+    const {id, userId} = data;
+
+    const profile = await prisma.profile.findUnique({
+        where: {
+            id: userId,
+        },
+    });
+
+    if (!profile) {
+        throw new Error("Perfil do usuário não encontrado.");
+    }
+
+    if (!profile.barberShopId) {
+        throw new Error("Usuário não possui uma barbearia vinculada.")
+    }
+
+    const service = await prisma.service.findUnique({
+        where: {
+            id,
+        },
+    });
+
+    if (!service) {
+        throw new Error("Serviço não encontrado.");
+    }
+
+    if (service.barberShopId !== profile.barberShopId) {
+        throw new Error("Serviço não pertence à sua barbearia.");
+    }
+
+    const deleteService = await prisma.service.delete({
+        where: {
+            id,
+        },
+    });
+
+    return deleteService;
+}
