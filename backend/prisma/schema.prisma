@@ -40,6 +40,7 @@ model BarberShop {
 
   profiles        Profile[]
   services        Service[]
+  clientes Client[]
 }
 
 model Service {
@@ -47,6 +48,16 @@ model Service {
   barberShopId String
   name         String
   price        Decimal
+  createdAt    DateTime   @default(now())
+
+  barberShop   BarberShop @relation(fields: [barberShopId], references: [id])
+}
+
+model Client {
+  id           String     @id @default(uuid())
+  barberShopId String
+  name         String
+  phone        String
   createdAt    DateTime   @default(now())
 
   barberShop   BarberShop @relation(fields: [barberShopId], references: [id])

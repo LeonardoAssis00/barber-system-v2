@@ -3,6 +3,7 @@ import { healthRoutes } from "./routes/health.js";
 import { authRoutes } from "./routes/auth.js";
 import fastifyJwt from "@fastify/jwt";
 import { serviceRoutes } from "./routes/services.js";
+import { clientRoutes } from "./routes/clients.js";
 
 export const app = fastify({
     logger: true,
@@ -15,3 +16,4 @@ app.register(fastifyJwt, {
 app.register(healthRoutes);
 app.register(authRoutes);
 app.register(serviceRoutes);
+app.register(clientRoutes);
